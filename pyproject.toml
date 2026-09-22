@@ -1,0 +1,21 @@
+[project]
+name = "timetrack"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "abhinav", email = "abhinavpancholi30@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.141.1",
+    "fastmcp>=4.0.5",
+    "uvicorn[standard]>=0.53.0",
+]
+
+[project.scripts]
+timetrack = "timetrack:main"
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
