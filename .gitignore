@@ -15,9 +15,6 @@ venv.bak/
 
 # Database
 *.db
-*.sqlite
-*.sqlite3
-timetrack.db
 
 # Environment variables
 .env
