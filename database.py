@@ -3,10 +3,33 @@ TimeTrack's persistence layer -- SQLite, shared by the website and the MCP
 server, exactly like RecipeBox's was. One real, professional use case this
 time: logging billable hours against projects, and summarizing them.
 """
+import os
+import shutil
 import sqlite3
+import tempfile
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "timetrack.db"
+BASE_DIR = Path(__file__).parent
+
+
+def _get_db_path() -> Path:
+    """Resolve database path, falling back to temp directory if deployed in a read-only environment (e.g. Prefect Horizon)."""
+    if custom_path := os.getenv("TIMETRACK_DB_PATH"):
+        return Path(custom_path)
+
+    local_db = BASE_DIR / "timetrack.db"
+    try:
+        # Test if current directory is writable
+        test_file = BASE_DIR / ".write_test"
+        test_file.touch()
+        test_file.unlink()
+        return local_db
+    except (OSError, PermissionError):
+        # Read-only container filesystem (e.g. Prefect Horizon)
+        return Path(tempfile.gettempdir()) / "timetrack.db"
+
+
+DB_PATH = _get_db_path()
 
 
 def get_connection():
@@ -16,6 +39,14 @@ def get_connection():
 
 
 def init_db():
+    # If running in a read-only container and using temp storage, copy bundled db if available
+    bundled_db = BASE_DIR / "timetrack.db"
+    if DB_PATH != bundled_db and not DB_PATH.exists() and bundled_db.exists():
+        try:
+            shutil.copy(bundled_db, DB_PATH)
+        except Exception:
+            pass
+
     conn = get_connection()
     conn.execute("""
         CREATE TABLE IF NOT EXISTS time_entries (
